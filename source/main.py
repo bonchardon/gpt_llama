@@ -7,16 +7,20 @@ from os import makedirs
 
 class OtherCheck:
 
+    def __init__(self, file_paths: list[str]):
+        self.file_paths: list[str] = file_paths
+
     def comparison_full(self):
 
-        with open('data/gpt_4o_mini.json', 'r') as f:
-            gpt_4o_mini = loads(f.read())
+        data = {}
 
-        with open('data/llama_3_1.json', 'r') as f:
-            llama_3_1 = loads(f.read())
+        for file_path in self.file_paths:
+            with open(file_path, 'r') as f:
+                data[file_path] = load(f)
 
-        with open('data/llama_3_7.json', 'r') as f:
-            llama_3_7 = loads(f.read())
+        gpt_4o_mini = data[self.file_paths[0]]
+        llama_3_1 = data[self.file_paths[1]]
+        llama_3_7 = data[self.file_paths[2]]
 
         df = pd.DataFrame({
             'id': [i['id'] for i in gpt_4o_mini],
@@ -50,13 +54,13 @@ class OtherCheck:
         #     dump(json_str, f, indent=4)
 
 
-class Analysis:
+class Analysis(OtherCheck):
+
+    def __init__(self):
+        super().__init__(file_paths=files)
 
     def analyze_and_visualize(self):
-        with open('stats/statistics.json', 'r') as f:
-            data = load(f)
-
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(self.comparison_full())
 
         df['same_type'] = df.apply(
             lambda row: row['gpt_4o_mini_type'] == row['llama_3_1_type'] == row['llama_3_7_type'], axis=1)
@@ -66,7 +70,6 @@ class Analysis:
         print(f"Number of notices with the same type: {same_type_count}")
         print(f"Number of notices with different types: {different_type_count}")
 
-        # Status Analysis
         df['same_status'] = df.apply(
             lambda row: row['gpt_4o_mini_status'] == row['llama_3_1_status'] == row['llama_3_7_status'], axis=1)
         same_status_count = df['same_status'].sum()
@@ -77,7 +80,6 @@ class Analysis:
 
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14, 6))
 
-        # Plot for Categories Analysis
         categories = ['Same Type', 'Different Type']
         counts = [same_type_count, different_type_count]
         axes[0].bar(categories, counts, color=['blue', 'orange'])
@@ -85,7 +87,6 @@ class Analysis:
         axes[0].set_ylabel('Count')
         axes[0].set_title('Analysis of Notice Types')
 
-        # Plot for Status Analysis
         statuses = ['Same Status', 'Different Status']
         counts = [same_status_count, different_status_count]
         axes[1].bar(statuses, counts, color=['green', 'red'])
@@ -96,15 +97,14 @@ class Analysis:
         plt.tight_layout()
         makedirs('visualization', exist_ok=True)
 
-        # Save the figure
         plt.savefig('visualization/analysis_visualization.png')
         plt.show()
 
 
 if __name__ == '__main__':
-    # data = open_files('data/gpt_4o_mini.json')
-    # print(data)
-    other_check = OtherCheck()
+
+    files = ['data/gpt_4o_mini.json', 'data/llama_3_1.json', 'data/llama_3_7.json']
+    other_check = OtherCheck(file_paths=files)
 
     analysis = Analysis()
     analysis.analyze_and_visualize()
