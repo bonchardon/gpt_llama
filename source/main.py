@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from os import makedirs
 
 
+
 class OtherCheck:
 
     def __init__(self, file_paths: list[str]):
